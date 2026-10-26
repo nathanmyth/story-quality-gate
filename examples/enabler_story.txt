@@ -1,0 +1,7 @@
+Title: Retain audit logs for 7 years
+Type: enabler - compliance
+Configure audit log retention to 7 years in the logging platform to meet the financial records retention policy.
+Acceptance criteria:
+- Given an audit event is written today, when retention settings are inspected, then the retention period shows 2555 days
+- Given a log older than 7 years exists, when the nightly job runs, then it is deleted
+Story points: 3

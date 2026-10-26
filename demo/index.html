@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Story Quality Gate</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&family=Fira+Code:wght@400;500&display=swap">
+<style>
+/* Layout: refinement desk — story card on the left, gate scorecard on the right, Jira outcome below the score */
+:root {
+  --bg: #f2f4f1; --card: #ffffff; --ink: #1b2420; --muted: #5f6b65; --line: #d7ddd8;
+  --accent: #1f6f5c; --accent-ink: #ffffff; --accent-soft: #e2f0eb;
+  --pass: #1f7a46; --pass-bg: #e3f3e8; --fail: #b3322b; --fail-bg: #fbe8e6; --part: #a86b00; --part-bg: #fbf0d9;
+  --f-body: "Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "Fira Code", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #111613; --card: #19201c; --ink: #e4ebe7; --muted: #9aa8a1; --line: #2b3530;
+  --accent: #6fcfb2; --accent-ink: #0f1513; --accent-soft: #183129;
+  --pass: #6bd894; --pass-bg: #17301f; --fail: #ff8f86; --fail-bg: #3a1c1a; --part: #f0bd5c; --part-bg: #362a12; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #111613; --card: #19201c; --ink: #e4ebe7; --muted: #9aa8a1; --line: #2b3530;
+  --accent: #6fcfb2; --accent-ink: #0f1513; --accent-soft: #183129;
+  --pass: #6bd894; --pass-bg: #17301f; --fail: #ff8f86; --fail-bg: #3a1c1a; --part: #f0bd5c; --part-bg: #362a12; color-scheme: dark }
+
+body { background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.5;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 26px 56px; }
+.wrap { max-width: 1120px; margin: 0 auto; display: grid; gap: 20px; }
+header { display: grid; gap: 4px; }
+.kicker { font-family: var(--f-mono); font-size: 0.74rem; color: var(--muted); letter-spacing: 0.04em; }
+h1 { font-size: clamp(1.6rem, 3.2vw, 2.2rem); margin: 0; letter-spacing: -0.015em; text-wrap: balance; }
+.lede { margin: 0; color: var(--muted); max-width: 72ch; }
+.desk { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 860px) { .desk { grid-template-columns: 1fr; } }
+.panel { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 20px; display: grid; gap: 14px; min-width: 0; }
+h2 { font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); margin: 0; font-weight: 600; }
+label { display: grid; gap: 5px; font-weight: 600; font-size: 0.85rem; }
+.hint { font-weight: 400; color: var(--muted); font-size: 0.78rem; }
+input, select, textarea { font: inherit; font-weight: 400; font-size: 0.93rem; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; width: 100%; box-sizing: border-box; }
+textarea { resize: vertical; }
+#statement { min-height: 76px; } #acs { min-height: 110px; font-size: 0.88rem; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.8rem; color: var(--muted); }
+.ex { font: inherit; font-size: 0.8rem; background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 999px; padding: 4px 11px; cursor: pointer; }
+.ex:hover { border-color: var(--accent); color: var(--accent); }
+
+.verdict { display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+.big { font-size: 2.6rem; font-weight: 700; line-height: 1; font-variant-numeric: tabular-nums; }
+.big small { font-size: 1rem; color: var(--muted); font-weight: 500; }
+.badge { font-size: 0.75rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 11px; border-radius: 999px; }
+.badge.pass { color: var(--pass); background: var(--pass-bg); } .badge.fail { color: var(--fail); background: var(--fail-bg); }
+.scale { position: relative; height: 10px; border-radius: 5px; background: var(--line); }
+.scale i { position: absolute; inset: 0 auto 0 0; border-radius: 5px; background: var(--fail); }
+.scale.pass i { background: var(--pass); }
+.scale b { position: absolute; top: -5px; bottom: -5px; left: 60%; width: 2px; background: var(--ink); }
+.scale-labels { display: flex; justify-content: space-between; font-family: var(--f-mono); font-size: 0.72rem; color: var(--muted); }
+.scale-labels span:nth-child(4) { color: var(--ink); font-weight: 500; }
+.crit { display: grid; gap: 6px; padding-block: 10px; border-top: 1px solid var(--line); }
+.crit-top { display: flex; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 0.9rem; }
+.pts { font-family: var(--f-mono); font-variant-numeric: tabular-nums; padding: 1px 8px; border-radius: 6px; font-size: 0.8rem; white-space: nowrap; }
+.pts.full { color: var(--pass); background: var(--pass-bg); } .pts.part { color: var(--part); background: var(--part-bg); } .pts.zero { color: var(--fail); background: var(--fail-bg); }
+.fb { margin: 0; padding-left: 16px; font-size: 0.84rem; color: var(--muted); display: grid; gap: 3px; }
+.blocker { background: var(--fail-bg); color: var(--fail); border-radius: 8px; padding: 10px 12px; font-size: 0.86rem; font-weight: 500; }
+.save { font: inherit; font-weight: 600; border: 0; border-radius: 8px; padding: 11px 18px; cursor: pointer; background: var(--accent); color: var(--accent-ink); }
+.save:disabled { background: var(--line); color: var(--muted); cursor: not-allowed; }
+.jira { border: 1px dashed var(--line); border-radius: 10px; padding: 12px 14px; display: grid; gap: 8px; font-size: 0.88rem; }
+.jira .key { font-family: var(--f-mono); font-weight: 500; color: var(--accent); }
+details summary { cursor: pointer; color: var(--muted); font-size: 0.82rem; }
+pre { font-family: var(--f-mono); font-size: 0.74rem; background: var(--bg); border-radius: 8px; padding: 10px; overflow-x: auto; max-height: 260px; margin: 8px 0 0; }
+.fine { font-size: 0.78rem; color: var(--muted); margin: 0; }
+footer { font-size: 0.82rem; color: var(--muted); }
+footer a { color: var(--accent); }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <span class="kicker">SAFe story rubric v1.1 · pass ≥ 3.0 / 5 + one testable acceptance criterion</span>
+    <h1>SAFe Story Quality Gate</h1>
+    <p class="lede">Write or paste a story. The gate scores it against SAFe story guidance (user voice, business value, INVEST, acceptance criteria) and only lets it into Jira when it passes. Weak stories go back to the Product Owner with specific fixes.</p>
+  </header>
+
+  <div class="desk">
+    <form class="panel" id="f">
+      <h2>Story</h2>
+      <div class="examples">Load:
+        <button type="button" class="ex" data-ex="good">Good story</button>
+        <button type="button" class="ex" data-ex="enabler">Enabler</button>
+        <button type="button" class="ex" data-ex="weak">Weak story</button>
+        <button type="button" class="ex" data-ex="blocked">Scores 3.7 but blocked</button>
+      </div>
+      <label for="title">Title<input id="title"></label>
+      <div class="two">
+        <label for="type">Type<select id="type">
+          <option value="user">User story</option>
+          <option value="enabler - exploration">Enabler: exploration</option>
+          <option value="enabler - architecture">Enabler: architecture</option>
+          <option value="enabler - infrastructure">Enabler: infrastructure</option>
+          <option value="enabler - compliance">Enabler: compliance</option>
+        </select></label>
+        <label for="points">Story points<select id="points">
+          <option value="">Not estimated</option><option>1</option><option>2</option><option>3</option><option>4</option>
+          <option>5</option><option>8</option><option>13</option><option>21</option><option>40</option>
+        </select></label>
+      </div>
+      <label for="statement">Story <span class="hint">As a &lt;role&gt;, I want &lt;activity&gt;, so that &lt;business value&gt;</span><textarea id="statement"></textarea></label>
+      <label for="acs">Acceptance criteria <span class="hint">One per line. Given / When / Then works best.</span><textarea id="acs"></textarea></label>
+      <p class="fine">Scores update as you type.</p>
+    </form>
+
+    <section class="panel" aria-live="polite">
+      <h2>Quality gate</h2>
+      <div id="card"></div>
+    </section>
+  </div>
+
+  <footer>This demo simulates the Jira save; the project creates real Jira issues through the REST API. Code, rubric, eval, and program docs: <a href="https://github.com/nathanmyth/story-quality-gate">github.com/nathanmyth/story-quality-gate</a></footer>
+</div>
+
+<script>
+const RUBRIC = {"version": "1.1", "framework": "SAFe 6.0 story guidance: user-voice form, 3 Cs, INVEST, acceptance criteria, iteration-sized stories", "max_score": 5, "pass_threshold": 3.0, "hard_requirements": [{"id": "has_testable_acceptance_criteria", "rule": "At least one acceptance criterion that can be verified (Given / When / Then or an observable, measurable result)", "why": "Acceptance criteria are the 'Confirmation' in SAFe's 3 Cs. A story with no verifiable criterion cannot be accepted, whatever its score."}], "criteria": [{"id": "format", "name": "User-voice format", "max": 1.0, "safe_basis": "Stories name a role, an activity, and a business value: 'As a <role>, I want <activity>, so that <value>'. Enabler stories (exploration, architecture, infrastructure, compliance) may be written without the user voice but must state their type."}, {"id": "value", "name": "Business value", "max": 1.0, "safe_basis": "INVEST 'Valuable': the 'so that' clause says why the story matters to a user, customer, or stakeholder, and doesn't just restate the activity."}, {"id": "acceptance", "name": "Testable acceptance criteria", "max": 1.0, "safe_basis": "INVEST 'Testable' and the 3 Cs 'Confirmation': each criterion is verifiable, ideally written as Given / When / Then, with no vague terms."}, {"id": "size", "name": "Estimable and small", "max": 1.0, "safe_basis": "INVEST 'Estimable' and 'Small': the story has a relative estimate on the Fibonacci-style scale and fits within one iteration. 13 points suggests splitting; more than 13 is feature-sized."}, {"id": "clarity", "name": "Clear, independent, vertically sliced", "max": 1.0, "safe_basis": "INVEST 'Independent' and 'Valuable': one goal per story, sliced vertically through the system rather than by technical layer, with no vague wording."}], "story_points_full": [1, 2, 3, 5, 8], "story_points_partial": [13], "enabler_types": ["exploration", "architecture", "infrastructure", "compliance"], "vague_terms": ["fast", "quickly", "user-friendly", "user friendly", "easy", "easily", "intuitive", "seamless", "seamlessly", "robust", "appropriate", "appropriately", "efficient", "efficiently", "etc", "and so on", "as needed", "as required", "better", "improved", "optimal", "nice", "simple", "flexible", "modern", "some", "various", "well", "properly", "good", "cleaner", "everything", "work fine", "works fine"], "horizontal_slice_terms": ["database table", "db schema", "database schema", "backend only", "front end only", "frontend only", "ui only", "api layer", "create table", "stored procedure", "data model only"]};
+const EXAMPLES = {
+  good: { title: "Export monthly usage as CSV", type: "user", points: "3",
+    statement: "As a facility manager, I want to export monthly energy usage as a CSV file, so that I can share consumption trends with the finance team.",
+    acs: "Given I am on the Usage page, when I select a month and click Export, then a CSV with one row per day downloads\nGiven the month has no data, when I click Export, then I see the message \"No usage recorded for this month\"" },
+  enabler: { title: "Retain audit logs for 7 years", type: "enabler - compliance", points: "3",
+    statement: "Configure audit log retention to 7 years in the logging platform to meet the financial records retention policy.",
+    acs: "Given an audit event is written today, when retention settings are inspected, then the retention period shows 2555 days\nGiven a log older than 7 years exists, when the nightly job runs, then it is deleted" },
+  weak: { title: "Search improvements", type: "user", points: "", statement: "As a user, I want better search.",
+    acs: "Search results are appropriate\nSearch is intuitive" },
+  blocked: { title: "Notifications", type: "user", points: "3", statement: "As a user, I want notifications, so that I get notifications.",
+    acs: "Notifications work well" },
+};
+
+// ---- Scorer: same rules as src/scorer.py ----
+const USER_VOICE = /\bas an?\s+(.+?),?\s+i\s+(?:want|need|can)\s+(?:to\s+)?(.+?)(?:,?\s+so\s+that\s+(.+))?$/i;
+const GWT = /\bgiven\b.+\bwhen\b.+\bthen\b/i;
+const MEASURABLE = /\d|\b(?:displays?|shows?|returns?|is saved|are saved|receives?|sends?|downloads?|redirect|error message|disabled|enabled|appears?|is created|is rejected|within)\b/i;
+const WHY = /\b(?:so that|in order to|to enable|to allow|to (?:remove|reduce|meet|decide|support|comply|prevent))\b\s+(.+)$/i;
+const STOP = new Set("a an the to i my can of and for in on it be is so that we".split(" "));
+const reEsc = s => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+const words = s => new Set((s.toLowerCase().match(/[a-z']+/g) || []).filter(w => !STOP.has(w)));
+const hasTerms = (text, terms) => terms.filter(t => new RegExp("(?<![a-z])" + reEsc(t) + "(?![a-z])").test(text.toLowerCase()));
+const r1 = x => Math.round(x * 10) / 10;
+
+function parseType(v) {
+  v = v.toLowerCase();
+  if (!v.includes("enabler")) return ["user", null];
+  return ["enabler", ["exploration", "architecture", "infrastructure", "compliance"].find(t => v.includes(t)) || null];
+}
+
+function score(s) {
+  const m = s.statement.match(USER_VOICE);
+  const crit = [];
+  // 1. format
+  let c = { id: "format", name: "User-voice format", points: 0, fb: [] };
+  if (s.type === "enabler") {
+    if (s.enabler_type && s.statement.trim().split(/\s+/).length >= 8) c.points = 1;
+    else { c.points = 0.5; c.fb.push("Enabler stories should name their type and describe the work in a full sentence."); }
+  } else if (m && m[3]) c.points = 1;
+  else if (m) { c.points = 0.5; c.fb.push("Add the 'so that <business value>' part of the user voice."); }
+  else c.fb.push("Write the story in user voice: 'As a <role>, I want <activity>, so that <business value>'.");
+  crit.push(c);
+  // 2. value
+  c = { id: "value", name: "Business value", points: 0, fb: [] };
+  let why = m && m[3] ? m[3] : null;
+  if (!why) { const w = s.statement.match(WHY); why = w ? w[1] : null; }
+  if (!why) c.fb.push("State why this matters: who benefits and what changes for them.");
+  else {
+    const ww = words(why), wa = words(m ? m[2] : s.statement);
+    const overlap = [...ww].filter(x => wa.has(x)).length / Math.max(1, ww.size);
+    if (why.trim().split(/\s+/).length >= 4 && overlap < 0.6) c.points = 1;
+    else { c.points = 0.5; c.fb.push("The value clause is thin or repeats the activity. Say what outcome the user gets."); }
+  }
+  crit.push(c);
+  // 3. acceptance
+  c = { id: "acceptance", name: "Testable acceptance criteria", points: 0, fb: [] };
+  const acs = s.acceptance_criteria;
+  if (!acs.length) c.fb.push("Add acceptance criteria. They are the 'Confirmation' in the 3 Cs; Given / When / Then works well.");
+  else {
+    const testable = acs.filter(a => GWT.test(a) || MEASURABLE.test(a));
+    let pts = 0.4 + 0.6 * testable.length / acs.length;
+    const un = acs.filter(a => !testable.includes(a));
+    if (un.length) c.fb.push(`${un.length} of ${acs.length} criteria can't be verified as written, e.g. "${un[0].slice(0, 70)}". Rewrite as Given / When / Then with an observable result.`);
+    const found = [...new Set(acs.flatMap(a => hasTerms(a, RUBRIC.vague_terms)))].sort();
+    if (found.length) { pts -= 0.2; c.fb.push(`Vague terms in acceptance criteria: ${found.join(", ")}.`); }
+    c.points = r1(Math.max(0, Math.min(1, pts)));
+  }
+  crit.push(c);
+  // 4. size
+  c = { id: "size", name: "Estimable and small", points: 0, fb: [] };
+  const p = s.story_points;
+  if (p == null) c.fb.push("Add a relative estimate in story points (1, 2, 3, 5, 8).");
+  else if (RUBRIC.story_points_full.includes(p)) c.points = 1;
+  else if (RUBRIC.story_points_partial.includes(p)) { c.points = 0.5; c.fb.push("13 points is at the edge of one iteration. Consider splitting."); }
+  else if (p > Math.max(...RUBRIC.story_points_partial)) c.fb.push(`${p} points is feature-sized. Split it into stories that each fit in one iteration.`);
+  else c.fb.push(`${p} isn't on the estimation scale. Use 1, 2, 3, 5, 8 (or 13).`);
+  crit.push(c);
+  // 5. clarity
+  c = { id: "clarity", name: "Clear, independent, vertically sliced", points: 1, fb: [] };
+  const vague = hasTerms(`${s.title} ${s.statement}`, RUBRIC.vague_terms);
+  if (vague.length) { c.points -= 0.5; c.fb.push(`Vague wording in the story: ${[...new Set(vague)].sort().join(", ")}.`); }
+  const want = m ? m[2] : s.statement;
+  if (/\band\b|\//i.test(want) && s.type === "user") { c.points -= 0.5; c.fb.push("The activity combines more than one goal ('and' or '/'). Consider splitting."); }
+  if (s.type === "user" && hasTerms(`${s.title} ${s.statement}`, RUBRIC.horizontal_slice_terms).length) { c.points -= 0.5; c.fb.push("This reads like a technical-layer slice. Slice vertically."); }
+  c.points = Math.max(0, c.points);
+  crit.push(c);
+
+  const total = r1(crit.reduce((a, x) => a + x.points, 0));
+  const blocked = !acs.some(a => GWT.test(a) || MEASURABLE.test(a));
+  return { score: total, passed: total >= RUBRIC.pass_threshold && !blocked, criteria: crit,
+    blockers: blocked ? [RUBRIC.hard_requirements[0].why] : [] };
+}
+
+// ---- UI ----
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, ch => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[ch]));
+let nextKey = 101, saved = null;
+
+function readStory() {
+  const [type, et] = parseType($("type").value);
+  return { title: $("title").value.trim(), statement: $("statement").value.trim(), type, enabler_type: et,
+    acceptance_criteria: $("acs").value.split("\n").map(l => l.replace(/^\s*(?:[-*•]|\d+[.)])\s*/, "").trim()).filter(Boolean),
+    story_points: $("points").value === "" ? null : Number($("points").value) };
+}
+
+function payload(s, r) {
+  const p = t => ({ type: "paragraph", content: [{ type: "text", text: t }] });
+  const h = t => ({ type: "heading", attrs: { level: 3 }, content: [{ type: "text", text: t }] });
+  return { fields: { project: { key: "DEMO" }, issuetype: { name: "Story" }, summary: s.title,
+    description: { type: "doc", version: 1, content: [p(s.statement), h("Acceptance criteria"),
+      { type: "bulletList", content: s.acceptance_criteria.map(a => ({ type: "listItem", content: [p(a)] })) },
+      h("Quality gate"), p(`Score ${r.score} / 5 against the SAFe story rubric.`)] },
+    labels: ["quality-gate", `qg-score-${Math.floor(r.score)}`].concat(s.type === "enabler" ? ["enabler"] : []) } };
+}
+
+function render() {
+  const s = readStory(), r = score(s), pct = r.score / 5 * 100;
+  const cls = x => x.points >= 1 ? "full" : x.points > 0 ? "part" : "zero";
+  $("card").innerHTML = `
+    <div class="verdict"><div class="big">${r.score.toFixed(1)}<small> / 5</small></div>
+      <span class="badge ${r.passed ? "pass" : "fail"}">${r.passed ? "Accept: save to Jira" : "Return to Product Owner"}</span></div>
+    <div><div class="scale ${r.passed ? "pass" : ""}"><i style="width:${pct}%"></i><b title="Pass threshold 3.0"></b></div>
+      <div class="scale-labels"><span>0</span><span>1</span><span>2</span><span>3 pass</span><span>4</span><span>5</span></div></div>
+    ${r.blockers.map(b => `<div class="blocker">Blocked: ${esc(b)}</div>`).join("")}
+    <div>${r.criteria.map(x => `<div class="crit"><div class="crit-top"><span>${esc(x.name)}</span><span class="pts ${cls(x)}">${x.points.toFixed(1)} / 1</span></div>
+      ${x.fb.length ? `<ul class="fb">${x.fb.map(f => `<li>${esc(f)}</li>`).join("")}</ul>` : ""}</div>`).join("")}</div>
+    <button class="save" id="save" type="button" ${r.passed ? "" : "disabled"}>${r.passed ? "Save to Jira" : "Not eligible for Jira"}</button>
+    <div id="jira">${saved ? saved : ""}</div>`;
+  $("save").onclick = () => {
+    const key = `DEMO-${nextKey++}`;
+    saved = `<div class="jira"><div>✓ Simulated: created <span class="key">${key}</span> in project DEMO with labels ${payload(s, r).fields.labels.map(l => `<code>${esc(l)}</code>`).join(", ")}.</div>
+      <details><summary>Request body sent to POST /rest/api/3/issue</summary><pre>${esc(JSON.stringify(payload(s, r), null, 2))}</pre></details></div>`;
+    $("jira").innerHTML = saved;
+  };
+}
+
+function load(name) {
+  const e = EXAMPLES[name];
+  $("title").value = e.title; $("type").value = e.type; $("points").value = e.points;
+  $("statement").value = e.statement; $("acs").value = e.acs; saved = null; render();
+}
+document.querySelectorAll(".ex").forEach(b => b.onclick = () => load(b.dataset.ex));
+["title", "type", "points", "statement", "acs"].forEach(id => $(id).addEventListener("input", () => { saved = null; render(); }));
+$("f").addEventListener("submit", e => e.preventDefault());
+load("good");
+</script>
+
+</body>
+</html>

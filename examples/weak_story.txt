@@ -1,0 +1,5 @@
+Title: Search improvements
+As a user, I want better search.
+Acceptance criteria:
+- Search results are appropriate
+- Search is intuitive

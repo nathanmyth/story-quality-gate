@@ -1,0 +1,110 @@
+{
+  "version": "1.1",
+  "framework": "SAFe 6.0 story guidance: user-voice form, 3 Cs, INVEST, acceptance criteria, iteration-sized stories",
+  "max_score": 5,
+  "pass_threshold": 3.0,
+  "hard_requirements": [
+    {
+      "id": "has_testable_acceptance_criteria",
+      "rule": "At least one acceptance criterion that can be verified (Given / When / Then or an observable, measurable result)",
+      "why": "Acceptance criteria are the 'Confirmation' in SAFe's 3 Cs. A story with no verifiable criterion cannot be accepted, whatever its score."
+    }
+  ],
+  "criteria": [
+    {
+      "id": "format",
+      "name": "User-voice format",
+      "max": 1.0,
+      "safe_basis": "Stories name a role, an activity, and a business value: 'As a <role>, I want <activity>, so that <value>'. Enabler stories (exploration, architecture, infrastructure, compliance) may be written without the user voice but must state their type."
+    },
+    {
+      "id": "value",
+      "name": "Business value",
+      "max": 1.0,
+      "safe_basis": "INVEST 'Valuable': the 'so that' clause says why the story matters to a user, customer, or stakeholder, and doesn't just restate the activity."
+    },
+    {
+      "id": "acceptance",
+      "name": "Testable acceptance criteria",
+      "max": 1.0,
+      "safe_basis": "INVEST 'Testable' and the 3 Cs 'Confirmation': each criterion is verifiable, ideally written as Given / When / Then, with no vague terms."
+    },
+    {
+      "id": "size",
+      "name": "Estimable and small",
+      "max": 1.0,
+      "safe_basis": "INVEST 'Estimable' and 'Small': the story has a relative estimate on the Fibonacci-style scale and fits within one iteration. 13 points suggests splitting; more than 13 is feature-sized."
+    },
+    {
+      "id": "clarity",
+      "name": "Clear, independent, vertically sliced",
+      "max": 1.0,
+      "safe_basis": "INVEST 'Independent' and 'Valuable': one goal per story, sliced vertically through the system rather than by technical layer, with no vague wording."
+    }
+  ],
+  "story_points_full": [
+    1,
+    2,
+    3,
+    5,
+    8
+  ],
+  "story_points_partial": [
+    13
+  ],
+  "enabler_types": [
+    "exploration",
+    "architecture",
+    "infrastructure",
+    "compliance"
+  ],
+  "vague_terms": [
+    "fast",
+    "quickly",
+    "user-friendly",
+    "user friendly",
+    "easy",
+    "easily",
+    "intuitive",
+    "seamless",
+    "seamlessly",
+    "robust",
+    "appropriate",
+    "appropriately",
+    "efficient",
+    "efficiently",
+    "etc",
+    "and so on",
+    "as needed",
+    "as required",
+    "better",
+    "improved",
+    "optimal",
+    "nice",
+    "simple",
+    "flexible",
+    "modern",
+    "some",
+    "various",
+    "well",
+    "properly",
+    "good",
+    "cleaner",
+    "everything",
+    "work fine",
+    "works fine"
+  ],
+  "horizontal_slice_terms": [
+    "database table",
+    "db schema",
+    "database schema",
+    "backend only",
+    "front end only",
+    "frontend only",
+    "ui only",
+    "api layer",
+    "create table",
+    "stored procedure",
+    "data model only"
+  ]
+}

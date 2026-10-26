@@ -1,0 +1,6 @@
+Title: Export monthly usage as CSV
+As a facility manager, I want to export monthly energy usage as a CSV file, so that I can share consumption trends with the finance team.
+Acceptance criteria:
+- Given I am on the Usage page, when I select a month and click Export, then a CSV with one row per day downloads
+- Given the month has no data, when I click Export, then I see the message "No usage recorded for this month"
+Story points: 3
